@@ -9,9 +9,10 @@ delivery, generate quotations/invoices, and track the full customer lifecycle th
 ## Stack
 
 - **Next.js (App Router) + TypeScript + Tailwind CSS**
-- **Prisma ORM** — SQLite for zero-config local dev; swap the datasource `provider` to `postgresql` for
-  production (every tenant-owned table already carries `tenantId` — add Postgres Row-Level Security policies
-  keyed on it for defense in depth beyond the application-layer scoping already enforced in `src/lib/session.ts`).
+- **Prisma ORM + PostgreSQL** — Postgres is required in every environment, including local dev: a serverless
+  target like Vercel has a read-only, ephemeral filesystem, so a SQLite file cannot be used there. Every
+  tenant-owned table already carries `tenantId` — add Postgres Row-Level Security policies keyed on it for
+  defense in depth beyond the application-layer scoping already enforced in `src/lib/session.ts`.
 - **Auth.js (NextAuth v5)** credentials auth, JWT sessions carrying `tenantId` + role + permission matrix.
 - Server Actions for mutations (create lead, log activity, generate quotation/invoice, approve, etc.) — each one
   re-derives the tenant from the session server-side, so a request can never act outside its own tenant.
@@ -19,15 +20,48 @@ delivery, generate quotations/invoices, and track the full customer lifecycle th
 
 ## Getting started
 
+Postgres locally, fastest path via Docker:
+
 ```bash
-npm install
-cp .env.example .env
-npm run db:push     # create the SQLite schema
-npm run db:seed      # seed two demo tenants with a full populated lifecycle
+docker run -d --name leadflow-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=leadflow -p 5432:5432 postgres:16
+```
+
+Then:
+
+```bash
+npm install          # postinstall runs `prisma generate`
+cp .env.example .env  # defaults to the Docker Postgres above — edit DATABASE_URL if yours differs
+npm run db:push       # create the schema
+npm run db:seed       # seed two demo tenants with a full populated lifecycle
 npm run dev
 ```
 
 Visit `http://localhost:3000`.
+
+## Deploying to Vercel
+
+The site errors on every page until these are done — a fresh deploy has no database connection at all:
+
+1. **Provision a Postgres database** reachable from Vercel. Easiest options: the **Neon** or **Supabase**
+   integration from the Vercel project's **Storage** tab (both have a free tier and hand you a connection
+   string directly), or any Postgres you already run elsewhere.
+2. In the Vercel project's **Settings → Environment Variables**, add:
+   - `DATABASE_URL` — the Postgres connection string from step 1 (for Neon/Supabase's pooled connection,
+     use the *pooled* variant they give you, not the direct one — Vercel functions are highly concurrent).
+   - `AUTH_SECRET` — any long random string (`openssl rand -base64 32`).
+   - `NEXTAUTH_URL` — your deployed URL, e.g. `https://lead-flow-crm-green.vercel.app`.
+3. **Redeploy** (or trigger a new deploy) so the build picks up the new env vars. `postinstall` runs
+   `prisma generate` automatically — no extra build command changes needed.
+4. **Push the schema and seed the database** — Vercel's build step does not run `db:push`/`db:seed` for you.
+   From your machine, with `DATABASE_URL` temporarily set to the *same* production connection string:
+   ```bash
+   DATABASE_URL="<production connection string>" npx prisma db push
+   DATABASE_URL="<production connection string>" npx tsx prisma/seed.ts
+   ```
+   (Re-running `db:seed` is safe — it wipes and re-creates the two demo tenants, it does not touch other
+   tables destructively beyond that.)
+
+Once the database is reachable and seeded, the deployment will serve the same app verified below.
 
 ### Demo accounts
 

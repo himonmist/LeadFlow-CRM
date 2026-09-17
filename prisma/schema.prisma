@@ -1,15 +1,17 @@
 // LeadFlow CRM — data model
-// Dev uses SQLite for zero-config setup. In production, point `provider` at
-// "postgresql" and set DATABASE_URL to a Postgres instance; every tenant-owned
-// table already carries `tenantId` and should additionally get Postgres
-// Row-Level Security policies keyed on tenantId for defense in depth.
+// Postgres-backed (required for serverless deployment targets like Vercel,
+// whose functions have a read-only, ephemeral filesystem that a SQLite file
+// can't survive). Every tenant-owned table already carries `tenantId` and
+// should additionally get Postgres Row-Level Security policies keyed on it
+// for defense in depth beyond the application-layer scoping in
+// src/lib/session.ts.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
