@@ -63,8 +63,16 @@ demonstrate tenant isolation — data never crosses between the two.
 
 This build implements the Phase 1 MVP scope from the product brief: landing page, registration/auth, multi-tenancy,
 RBAC, dashboard, leads, customers/contacts, opportunities, pipeline, activities/follow-ups, calendar, service &
-training management, quotations, invoices/payments, approvals, notifications, audit log, basic reports and global
-search, with realistic seeded data across the full lead → delivery → invoice → payment journey. Phase 2 items
-(automation execution engine, real email/SMS/WhatsApp delivery, calendar/Zoom integrations, subscription billing)
-and Phase 3 (AI scoring, forecasting) are intentionally out of scope for this pass — the data model
+training management, quotations, invoices/payments, approvals, notifications, audit log, reports (with CSV export)
+and global search, a Super Admin platform console, with realistic seeded data across the full lead → delivery →
+invoice → payment journey. Phase 2 items (automation *execution* engine — the `AutomationRule` model and its rows
+exist, but nothing evaluates them yet — real email/SMS/WhatsApp delivery, calendar/Zoom integrations, subscription
+billing) and Phase 3 (AI scoring, forecasting) are intentionally out of scope for this pass — the data model
 (`AutomationRule`, `Document`, `Approval`) already has room for them.
+
+### Verified end-to-end
+
+Login → create lead → convert to opportunity → drag through the Kanban pipeline → manager approval on a
+high-value deal (auto-creates the Service/Training fulfillment record on approval) → quotation → generate
+invoice → record payment → customer timeline reflects every step. Tenant isolation was verified by attempting
+cross-tenant access by record ID (404s) and confirming the two seeded tenants never share rows.

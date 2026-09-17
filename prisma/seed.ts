@@ -74,7 +74,7 @@ async function buildTenant(opts: {
     },
   });
 
-  const [admin, manager, marketing, sales, trainer, finance, viewer] = await Promise.all([
+  const [admin, manager, marketing, sales, trainer, finance] = await Promise.all([
     prisma.user.create({
       data: { tenantId: tenant.id, name: `${opts.name.split(" ")[0]} Admin`, email: `admin@${opts.slug}.com`, passwordHash: opts.passwordHash, roleId: opts.roles.ADMIN, title: "Company Admin" },
     }),
@@ -290,7 +290,7 @@ async function buildTenant(opts: {
   await addActivity({ type: "PROPOSAL_SENT", daysAgo: 12, subject: "Proposal sent", outcome: "Sent proposal for AI-Powered Pharma Sales Excellence.", opportunityId: trainingOp.id, customerId: pharmaLead.customer.id, assignedToId: pharmaLead.owner.id });
   await addActivity({ type: "TRAINING_DISCUSSION", daysAgo: 8, subject: "Negotiation call", outcome: "Agreed on final fee of BDT 250,000.", opportunityId: trainingOp.id, customerId: pharmaLead.customer.id, assignedToId: pharmaLead.owner.id });
 
-  const training = await prisma.trainingProgram.create({
+  await prisma.trainingProgram.create({
     data: {
       tenantId: tenant.id,
       opportunityId: trainingOp.id,
@@ -382,7 +382,7 @@ async function buildTenant(opts: {
   await addActivity({ type: "QUOTATION_SENT", daysAgo: 20, subject: "Quotation sent", outcome: "Quotation shared for review.", opportunityId: serviceOp.id, customerId: vertexLead.customer.id, assignedToId: vertexLead.owner.id });
   await addActivity({ type: "CONTRACT_DISCUSSION", daysAgo: 10, subject: "Contract finalized", outcome: "Signed contract for BDT 850,000.", opportunityId: serviceOp.id, customerId: vertexLead.customer.id, assignedToId: vertexLead.owner.id });
 
-  const service = await prisma.service.create({
+  await prisma.service.create({
     data: {
       tenantId: tenant.id,
       opportunityId: serviceOp.id,

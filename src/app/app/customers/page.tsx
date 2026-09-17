@@ -3,7 +3,6 @@ import { requirePermission } from "@/lib/session";
 import { listCustomers } from "@/lib/queries/customers";
 import { Card, EmptyState } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 
 export default async function CustomersPage() {

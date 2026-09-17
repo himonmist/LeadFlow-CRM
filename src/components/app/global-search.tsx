@@ -14,12 +14,12 @@ export function GlobalSearch() {
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setGroups([]);
-      return;
-    }
     const controller = new AbortController();
     const timeout = setTimeout(async () => {
+      if (query.trim().length < 2) {
+        setGroups([]);
+        return;
+      }
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
         const data = await res.json();

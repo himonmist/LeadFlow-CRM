@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { updateService } from "../actions";
 
 const STATUSES = ["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "PARTIALLY_DELIVERED", "COMPLETED", "CANCELLED", "POSTPONED"];
