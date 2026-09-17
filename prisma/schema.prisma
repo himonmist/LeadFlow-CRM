@@ -1,0 +1,766 @@
+// LeadFlow CRM — data model
+// Dev uses SQLite for zero-config setup. In production, point `provider` at
+// "postgresql" and set DATABASE_URL to a Postgres instance; every tenant-owned
+// table already carries `tenantId` and should additionally get Postgres
+// Row-Level Security policies keyed on tenantId for defense in depth.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Platform / tenancy
+// ---------------------------------------------------------------------------
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum PlanTier {
+  STARTER
+  PROFESSIONAL
+  BUSINESS
+  ENTERPRISE
+}
+
+model Tenant {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  companyType String?
+  industry    String?
+  country     String?
+  address     String?
+  website     String?
+  planTier    PlanTier     @default(STARTER)
+  status      TenantStatus @default(TRIAL)
+  trialEndsAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  users            User[]
+  roles            Role[]
+  customers        Customer[]
+  contacts         Contact[]
+  leads            Lead[]
+  opportunities    Opportunity[]
+  activities       Activity[]
+  services         Service[]
+  trainingPrograms TrainingProgram[]
+  quotations       Quotation[]
+  invoices         Invoice[]
+  payments         Payment[]
+  notifications    Notification[]
+  documents        Document[]
+  approvals        Approval[]
+  auditLogs        AuditLog[]
+  pipelineStages   PipelineStage[]
+  automationRules  AutomationRule[]
+}
+
+enum RoleName {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  MARKETING
+  SALES
+  TRAINER
+  FINANCE
+  VIEWER
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+  name        RoleName
+  label       String
+  permissions Json // { "lead": ["view","create","edit","delete","assign","export"], "invoice": [...] }
+
+  users User[]
+
+  @@unique([tenantId, name])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String?
+  tenant       Tenant?   @relation(fields: [tenantId], references: [id])
+  name         String
+  email        String    @unique
+  passwordHash String
+  roleId       String
+  role         Role      @relation(fields: [roleId], references: [id])
+  phone        String?
+  title        String?
+  avatarColor  String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  ownedLeads          Lead[]          @relation("LeadOwner")
+  ownedOpportunities  Opportunity[]   @relation("OpportunityOwner")
+  assignedActivities  Activity[]      @relation("ActivityAssignee")
+  projectManagerFor   Service[]       @relation("ServiceProjectManager")
+  trainerFor          TrainingProgram[] @relation("TrainingTrainer")
+  notifications       Notification[]
+  approvalsRequested  Approval[]      @relation("ApprovalRequestedBy")
+  approvalsReviewed   Approval[]      @relation("ApprovalReviewedBy")
+  auditLogs           AuditLog[]
+  documentsUploaded   Document[]
+  comments            Comment[]
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Customers / Contacts
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  name      String
+  industry  String?
+  website   String?
+  country   String?
+  city      String?
+  address   String?
+  tags      String? // comma separated for MVP simplicity
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  contacts      Contact[]
+  leads         Lead[]
+  opportunities Opportunity[]
+  activities    Activity[]
+  services      Service[]
+  trainings     TrainingProgram[]
+  quotations    Quotation[]
+  invoices      Invoice[]
+  documents     Document[]
+
+  @@index([tenantId])
+}
+
+model Contact {
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  name       String
+  designation String?
+  email      String?
+  phone      String?
+  isPrimary  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  leads      Lead[]
+  activities Activity[]
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Lead
+// ---------------------------------------------------------------------------
+
+enum LeadSource {
+  WEBSITE
+  FACEBOOK
+  LINKEDIN
+  EMAIL
+  PHONE
+  REFERRAL
+  EVENT
+  CAMPAIGN
+  EXISTING_CUSTOMER
+  PARTNER
+  MANUAL
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum BusinessInterest {
+  SERVICE
+  TRAINING
+  SOFTWARE
+  CONSULTING
+  RESOURCE_AUGMENTATION
+  AI_SOLUTION
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Lead {
+  id              String           @id @default(cuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  leadNumber      String
+  leadDate        DateTime         @default(now())
+  companyName     String
+  contactId       String?
+  contact         Contact?         @relation(fields: [contactId], references: [id])
+  customerId      String?
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  designation     String?
+  email           String?
+  mobile          String?
+  altPhone        String?
+  website         String?
+  industry        String?
+  companySize     String?
+  country         String?
+  city            String?
+  address         String?
+  source          LeadSource       @default(MANUAL)
+  businessInterest BusinessInterest @default(SERVICE)
+  status          LeadStatus       @default(NEW)
+  priority        Priority         @default(MEDIUM)
+  estimatedValue  Float?
+  ownerId         String?
+  owner           User?            @relation("LeadOwner", fields: [ownerId], references: [id])
+  notes           String?
+  tags            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+
+  opportunities Opportunity[]
+  activities    Activity[]
+  documents     Document[]
+
+  @@unique([tenantId, leadNumber])
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Opportunity / Engagement type
+// ---------------------------------------------------------------------------
+
+enum EngagementType {
+  SERVICE
+  TRAINING
+}
+
+model PipelineStage {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  key      String // NEW, CONTACTED, ... WON, LOST, POSTPONED, CANCELLED, ON_HOLD
+  label    String
+  order    Int
+  isClosed Boolean @default(false)
+  isWon    Boolean @default(false)
+
+  opportunities Opportunity[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+}
+
+model Opportunity {
+  id             String         @id @default(cuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  opportunityNo  String
+  customerId     String
+  customer       Customer       @relation(fields: [customerId], references: [id])
+  leadId         String?
+  lead           Lead?          @relation(fields: [leadId], references: [id])
+  requirement    String
+  engagementType EngagementType @default(SERVICE)
+  programName    String?
+  estimatedValue Float          @default(0)
+  probability    Int            @default(20)
+  expectedCloseDate DateTime?
+  ownerId        String?
+  owner          User?          @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  stageId        String
+  stage          PipelineStage  @relation(fields: [stageId], references: [id])
+  priority       Priority       @default(MEDIUM)
+  nextAction     String?
+  nextFollowUpDate DateTime?
+  lostReason     String?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  activities Activity[]
+  service    Service?
+  training   TrainingProgram?
+  quotations Quotation[]
+  invoices   Invoice[]
+  documents  Document[]
+  approvals  Approval[]
+
+  @@unique([tenantId, opportunityNo])
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Activities
+// ---------------------------------------------------------------------------
+
+enum ActivityType {
+  PHONE_CALL
+  EMAIL
+  WHATSAPP
+  ONLINE_MEETING
+  PHYSICAL_MEETING
+  DEMO
+  PROPOSAL_SENT
+  QUOTATION_SENT
+  FOLLOW_UP
+  REMINDER
+  TRAINING_DISCUSSION
+  CONTRACT_DISCUSSION
+  PAYMENT_DISCUSSION
+  OTHER
+}
+
+enum ActivityStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+}
+
+model Activity {
+  id               String         @id @default(cuid())
+  tenantId         String
+  tenant           Tenant         @relation(fields: [tenantId], references: [id])
+  type             ActivityType
+  date             DateTime
+  startTime        String?
+  endTime          String?
+  subject          String
+  description      String?
+  leadId           String?
+  lead             Lead?          @relation(fields: [leadId], references: [id])
+  opportunityId    String?
+  opportunity      Opportunity?   @relation(fields: [opportunityId], references: [id])
+  customerId       String?
+  customer         Customer?      @relation(fields: [customerId], references: [id])
+  contactId        String?
+  contact          Contact?       @relation(fields: [contactId], references: [id])
+  outcome          String?
+  status           ActivityStatus @default(PLANNED)
+  assignedToId     String?
+  assignedTo       User?          @relation("ActivityAssignee", fields: [assignedToId], references: [id])
+  nextAction       String?
+  nextFollowUpDate DateTime?
+  internalNote     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  documents Document[]
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Service delivery
+// ---------------------------------------------------------------------------
+
+enum DeliveryStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  PARTIALLY_DELIVERED
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+model Service {
+  id                  String         @id @default(cuid())
+  tenantId            String
+  tenant              Tenant         @relation(fields: [tenantId], references: [id])
+  opportunityId       String         @unique
+  opportunity         Opportunity    @relation(fields: [opportunityId], references: [id])
+  customerId          String
+  customer            Customer       @relation(fields: [customerId], references: [id])
+  name                String
+  category            String?
+  description         String?
+  startDate           DateTime?
+  expectedDeliveryDate DateTime?
+  actualDeliveryDate  DateTime?
+  projectManagerId    String?
+  projectManager      User?          @relation("ServiceProjectManager", fields: [projectManagerId], references: [id])
+  assignedTeam        String?
+  status              DeliveryStatus @default(SCHEDULED)
+  value               Float          @default(0)
+  discount            Float          @default(0)
+  tax                 Float          @default(0)
+  paymentTerms        String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  documents Document[]
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Training
+// ---------------------------------------------------------------------------
+
+enum DeliveryMode {
+  PHYSICAL
+  ONLINE
+  HYBRID
+}
+
+enum TrainingStatus {
+  SCHEDULED
+  CONFIRMED
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model TrainingProgram {
+  id              String         @id @default(cuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  opportunityId   String         @unique
+  opportunity     Opportunity    @relation(fields: [opportunityId], references: [id])
+  customerId      String
+  customer        Customer       @relation(fields: [customerId], references: [id])
+  programName     String
+  category        String?
+  trainerId       String?
+  trainer         User?          @relation("TrainingTrainer", fields: [trainerId], references: [id])
+  deliveryMode    DeliveryMode   @default(PHYSICAL)
+  trainingDate    DateTime?
+  startTime       String?
+  endTime         String?
+  durationHours    Float?
+  venue           String?
+  meetingLink     String?
+  participants    Int?
+  coordinator     String?
+  fee             Float          @default(0)
+  discount        Float          @default(0)
+  tax             Float          @default(0)
+  status          TrainingStatus @default(SCHEDULED)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  documents Document[]
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Quotation
+// ---------------------------------------------------------------------------
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model Quotation {
+  id            String          @id @default(cuid())
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  quotationNo   String
+  customerId    String
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity?    @relation(fields: [opportunityId], references: [id])
+  status        QuotationStatus @default(DRAFT)
+  validUntil    DateTime?
+  terms         String?
+  notes         String?
+  revision      Int             @default(1)
+  subtotal      Float           @default(0)
+  discount      Float           @default(0)
+  tax           Float           @default(0)
+  total         Float           @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  items     QuotationItem[]
+  invoices  Invoice[]
+  approvals Approval[]
+  documents Document[]
+
+  @@unique([tenantId, quotationNo])
+  @@index([tenantId])
+}
+
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float     @default(1)
+  unitPrice   Float      @default(0)
+  total       Float      @default(0)
+}
+
+// ---------------------------------------------------------------------------
+// Invoice / Payment
+// ---------------------------------------------------------------------------
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  invoiceNo     String
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity?  @relation(fields: [opportunityId], references: [id])
+  quotationId   String?
+  quotation     Quotation?    @relation(fields: [quotationId], references: [id])
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  paymentTerms  String?
+  subtotal      Float         @default(0)
+  discount      Float         @default(0)
+  tax           Float         @default(0)
+  total         Float         @default(0)
+  paidAmount    Float         @default(0)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items     InvoiceItem[]
+  payments  Payment[]
+  approvals Approval[]
+  documents Document[]
+
+  @@unique([tenantId, invoiceNo])
+  @@index([tenantId])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float   @default(0)
+  total       Float   @default(0)
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  amount      Float
+  paymentDate DateTime @default(now())
+  method      String?
+  reference   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Approvals
+// ---------------------------------------------------------------------------
+
+enum ApprovalType {
+  HIGH_VALUE_OPPORTUNITY
+  DISCOUNT
+  PROPOSAL
+  QUOTATION
+  INVOICE
+  DEAL_CLOSURE
+  CANCELLATION
+  POSTPONEMENT
+  SERVICE_COMPLETION
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+}
+
+model Approval {
+  id              String         @id @default(cuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  type            ApprovalType
+  status          ApprovalStatus @default(PENDING)
+  opportunityId   String?
+  opportunity     Opportunity?   @relation(fields: [opportunityId], references: [id])
+  quotationId     String?
+  quotation       Quotation?     @relation(fields: [quotationId], references: [id])
+  invoiceId       String?
+  invoice         Invoice?       @relation(fields: [invoiceId], references: [id])
+  requestedById   String
+  requestedBy     User           @relation("ApprovalRequestedBy", fields: [requestedById], references: [id])
+  reviewedById    String?
+  reviewedBy      User?          @relation("ApprovalReviewedBy", fields: [reviewedById], references: [id])
+  reason          String?
+  reviewComment   String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications / Documents / Comments / Audit / Automation
+// ---------------------------------------------------------------------------
+
+enum NotificationType {
+  NEW_LEAD
+  LEAD_ASSIGNED
+  FOLLOW_UP_REMINDER
+  OVERDUE_FOLLOW_UP
+  MEETING_REMINDER
+  APPROVAL_REQUEST
+  APPROVAL_RESULT
+  DEAL_WON
+  TRAINING_REMINDER
+  SERVICE_DEADLINE
+  INVOICE_GENERATED
+  PAYMENT_RECEIVED
+  INVOICE_OVERDUE
+  MANAGER_COMMENT
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  tenantId  String
+  tenant    Tenant           @relation(fields: [tenantId], references: [id])
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([tenantId, userId])
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  name          String
+  fileType      String
+  url           String
+  version       Int          @default(1)
+  uploadedById  String?
+  uploadedBy    User?        @relation(fields: [uploadedById], references: [id])
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id])
+  customerId    String?
+  customer      Customer?    @relation(fields: [customerId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  serviceId     String?
+  service       Service?     @relation(fields: [serviceId], references: [id])
+  trainingId    String?
+  training      TrainingProgram? @relation(fields: [trainingId], references: [id])
+  quotationId   String?
+  quotation     Quotation?   @relation(fields: [quotationId], references: [id])
+  invoiceId     String?
+  invoice       Invoice?     @relation(fields: [invoiceId], references: [id])
+  activityId    String?
+  activity      Activity?    @relation(fields: [activityId], references: [id])
+  createdAt     DateTime     @default(now())
+
+  @@index([tenantId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  entityType String
+  entityId  String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+model AutomationRule {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  triggerType String // NO_ACTIVITY_DAYS | HIGH_VALUE | TRAINING_TOMORROW | INVOICE_OVERDUE
+  condition   Json
+  action      Json
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+}
