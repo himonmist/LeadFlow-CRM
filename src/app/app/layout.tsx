@@ -12,11 +12,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar permissions={user.permissions} tenantName={user.tenantName ?? "Workspace"} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar userName={user.name ?? "User"} roleLabel={ROLE_LABELS[user.roleName] ?? user.roleName} unreadCount={unreadCount} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    <div className="flex h-screen overflow-hidden bg-background print:h-auto print:overflow-visible">
+      <div className="no-print contents">
+        <Sidebar permissions={user.permissions} tenantName={user.tenantName ?? "Workspace"} />
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
+        <div className="no-print contents">
+          <Topbar userName={user.name ?? "User"} roleLabel={ROLE_LABELS[user.roleName] ?? user.roleName} unreadCount={unreadCount} />
+        </div>
+        <main className="flex-1 overflow-y-auto p-6 print:overflow-visible print:p-0">{children}</main>
       </div>
     </div>
   );
