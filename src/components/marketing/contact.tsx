@@ -16,8 +16,8 @@ export function Contact() {
             Tell us about your lead-to-delivery workflow and we&rsquo;ll show you how LeadFlow maps to it.
           </p>
           <div className="mt-8 space-y-3 text-sm text-ink-600">
-            <p>hello@leadflow.com</p>
-            <p>+1 (555) 010-2024</p>
+            <p>himonmist@gmail.com</p>
+            <p>+880 1847 347832</p>
             <p>Available Monday–Friday, 9am–6pm</p>
           </div>
         </div>
