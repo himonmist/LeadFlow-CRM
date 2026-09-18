@@ -1,11 +1,61 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
+import { generateOpportunityNumber } from "@/lib/numbering";
 import { logAudit } from "@/lib/audit";
 
 const HIGH_VALUE_THRESHOLD = 500000;
+
+/**
+ * Adds a new, independent Opportunity to a customer that already has one
+ * or more Opportunities (e.g. a second training program for a repeat
+ * client). Each Opportunity keeps its own stage, follow-ups, and Won/Lost
+ * outcome — this does not merge or replace anything the customer already
+ * has.
+ */
+export async function createOpportunity(formData: FormData) {
+  const user = await requirePermission("opportunity", "create");
+  const customerId = String(formData.get("customerId"));
+  const leadId = String(formData.get("leadId") || "") || undefined;
+
+  const customer = await prisma.customer.findFirst({ where: { id: customerId, tenantId: user.tenantId } });
+  if (!customer) return;
+
+  const lead = leadId ? await prisma.lead.findFirst({ where: { id: leadId, tenantId: user.tenantId } }) : null;
+
+  const stage = await prisma.pipelineStage.findFirst({ where: { tenantId: user.tenantId, key: "NEW" } });
+  if (!stage) return;
+
+  const opportunityNo = await generateOpportunityNumber(user.tenantId);
+  const opportunity = await prisma.opportunity.create({
+    data: {
+      tenantId: user.tenantId,
+      opportunityNo,
+      customerId,
+      leadId: lead?.id,
+      requirement: String(formData.get("requirement") || ""),
+      engagementType: (formData.get("engagementType") as any) || "SERVICE",
+      programName: String(formData.get("programName") || "") || undefined,
+      estimatedValue: Number(formData.get("estimatedValue") || 0),
+      priority: (formData.get("priority") as any) || "MEDIUM",
+      ownerId: user.id,
+      stageId: stage.id,
+      nextAction: "Initial discovery call",
+      nextFollowUpDate: new Date(Date.now() + 3 * 86400000),
+    },
+  });
+
+  await logAudit({ tenantId: user.tenantId, userId: user.id, action: "CREATE", entityType: "Opportunity", entityId: opportunity.id, after: { opportunityNo, customerId } });
+
+  revalidatePath(`/app/customers/${customerId}`);
+  if (leadId) revalidatePath(`/app/leads/${leadId}`);
+  revalidatePath("/app/opportunities");
+  revalidatePath("/app/pipeline");
+  redirect(`/app/opportunities/${opportunity.id}`);
+}
 
 export async function moveOpportunityStage(opportunityId: string, stageId: string) {
   const user = await requirePermission("opportunity", "edit");

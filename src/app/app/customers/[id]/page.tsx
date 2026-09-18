@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requirePermission } from "@/lib/session";
 import { getCustomerTimeline } from "@/lib/queries/customers";
+import { can } from "@/lib/permissions";
 import { Card, EmptyState } from "@/components/ui/card";
 import { StatusBadge, Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,6 +14,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const data = await getCustomerTimeline(user.tenantId, id);
   if (!data) notFound();
   const { customer, events } = data;
+  const canCreateOpp = can(user.permissions, "opportunity", "create");
 
   return (
     <div className="grid gap-5 lg:grid-cols-3">
@@ -44,7 +47,14 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </Card>
 
         <Card>
-          <p className="mb-3 text-sm font-semibold text-ink-900">Opportunities</p>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold text-ink-900">Opportunities</p>
+            {canCreateOpp && (
+              <ButtonLink href={`/app/opportunities/new?customerId=${customer.id}`} size="sm" variant="secondary">
+                + New Opportunity
+              </ButtonLink>
+            )}
+          </div>
           {customer.opportunities.length === 0 ? (
             <EmptyState title="No opportunities yet" />
           ) : (

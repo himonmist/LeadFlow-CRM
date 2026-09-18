@@ -6,7 +6,7 @@ import { can } from "@/lib/permissions";
 import { Card, EmptyState } from "@/components/ui/card";
 import { StatusBadge, Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { LogActivityForm } from "@/components/app/log-activity-form";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
@@ -90,7 +90,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <div className="flex flex-col gap-5">
         {lead.opportunities.length > 0 ? (
           <Card>
-            <p className="mb-3 text-sm font-semibold text-ink-900">Opportunities</p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-ink-900">Opportunities</p>
+              {canCreateOpp && lead.customerId && (
+                <ButtonLink href={`/app/opportunities/new?customerId=${lead.customerId}&leadId=${lead.id}`} size="sm" variant="secondary">
+                  + New Opportunity
+                </ButtonLink>
+              )}
+            </div>
             <div className="space-y-2">
               {lead.opportunities.map((o) => (
                 <Link key={o.id} href={`/app/opportunities/${o.id}`} className="block rounded-lg border border-gray-100 p-3 hover:border-brand-200">
