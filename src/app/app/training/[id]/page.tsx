@@ -5,7 +5,7 @@ import { getTrainingProgram, listTrainers } from "@/lib/queries/training";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Field, Input, Select } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { updateTrainingProgram } from "../actions";
 
@@ -39,7 +39,7 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
 
         <Card>
           <p className="mb-3 text-sm font-semibold text-ink-900">Schedule &amp; Delivery</p>
-          <form action={updateTrainingProgram} className="grid gap-4">
+          <form action={updateTrainingProgram} key={training.updatedAt.getTime()} className="grid gap-4">
             <input type="hidden" name="trainingId" value={training.id} />
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Status">
@@ -107,9 +107,9 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
                 <Input type="number" name="tax" defaultValue={training.tax} />
               </Field>
             </div>
-            <Button type="submit" size="sm" className="w-fit">
+            <SubmitButton size="sm" className="w-fit" pendingLabel="Saving...">
               Save Changes
-            </Button>
+            </SubmitButton>
           </form>
         </Card>
       </div>

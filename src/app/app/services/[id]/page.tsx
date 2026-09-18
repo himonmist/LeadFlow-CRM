@@ -5,7 +5,7 @@ import { getService } from "@/lib/queries/services";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { formatCurrency } from "@/lib/format";
 import { updateService } from "../actions";
 
@@ -45,7 +45,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
         <Card>
           <p className="mb-3 text-sm font-semibold text-ink-900">Delivery Details</p>
-          <form action={updateService} className="grid gap-4">
+          <form action={updateService} key={service.updatedAt.getTime()} className="grid gap-4">
             <input type="hidden" name="serviceId" value={service.id} />
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Status">
@@ -89,9 +89,9 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             <Field label="Description">
               <Textarea name="description" defaultValue={service.description ?? ""} />
             </Field>
-            <Button type="submit" size="sm" className="w-fit">
+            <SubmitButton size="sm" className="w-fit" pendingLabel="Saving...">
               Save Changes
-            </Button>
+            </SubmitButton>
           </form>
         </Card>
       </div>
