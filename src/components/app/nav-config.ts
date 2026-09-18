@@ -76,7 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Workspace",
     items: [
       { href: "/app/team", label: "Team", icon: UsersRound, entity: "user" },
-      { href: "/app/settings", label: "Settings", icon: Settings, entity: "settings" },
+      { href: "/app/settings", label: "Settings", icon: Settings },
     ],
   },
 ];

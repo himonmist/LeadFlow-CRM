@@ -125,6 +125,7 @@ export async function cleanupTenant(tenantId: string) {
   await prisma.lead.deleteMany({ where: { tenantId } });
   await prisma.customer.deleteMany({ where: { tenantId } });
   await prisma.pipelineStage.deleteMany({ where: { tenantId } });
+  await prisma.passwordResetToken.deleteMany({ where: { user: { tenantId } } });
   await prisma.user.deleteMany({ where: { tenantId } });
   await prisma.role.deleteMany({ where: { tenantId } });
   await prisma.tenant.delete({ where: { id: tenantId } });

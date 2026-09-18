@@ -42,9 +42,9 @@ export default function LoginPage() {
               <input type="checkbox" name="remember" defaultChecked />
               Remember me
             </label>
-            <a href="#" className="font-medium text-brand-600">
+            <Link href="/forgot-password" className="font-medium text-brand-600">
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           {state.error && <p className="text-sm text-red-600">{state.error}</p>}

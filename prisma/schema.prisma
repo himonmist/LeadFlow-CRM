@@ -49,6 +49,14 @@ model Tenant {
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
+  smtpHost      String?
+  smtpPort      Int?
+  smtpUser      String?
+  smtpPassword  String?
+  smtpFromEmail String?
+  smtpFromName  String?
+  smtpSecure    Boolean @default(true)
+
   users            User[]
   roles            Role[]
   customers        Customer[]
@@ -121,8 +129,21 @@ model User {
   auditLogs           AuditLog[]
   documentsUploaded   Document[]
   comments            Comment[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([tenantId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
