@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import type { RoleName } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ROLE_PERMISSIONS } from "@/lib/permissions";
 import type { MockSessionUser } from "./session-mock";
@@ -42,7 +43,7 @@ export async function createTenantWithAdmin(label: string): Promise<{ tenantId: 
 /** Creates a User with an arbitrary role (e.g. "MARKETING") under an
  * existing tenant, for tests that need to exercise the real permission
  * matrix rather than always acting as an ADMIN. */
-export async function createUserWithRole(tenantId: string, roleName: keyof typeof ROLE_PERMISSIONS): Promise<MockSessionUser> {
+export async function createUserWithRole(tenantId: string, roleName: RoleName): Promise<MockSessionUser> {
   const unique = randomUUID();
   const role = await prisma.role.upsert({
     where: { tenantId_name: { tenantId, name: roleName } },
