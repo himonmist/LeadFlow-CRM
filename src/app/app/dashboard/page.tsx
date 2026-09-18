@@ -5,8 +5,9 @@ import { LineTrendCard, BarTrendCard } from "@/components/app/charts";
 import { formatCurrency } from "@/lib/format";
 import Link from "next/link";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
   const user = await requireTenantSession();
+  const { denied } = await searchParams;
   const data = await getDashboardData(user.tenantId);
 
   const kpis = [
@@ -26,6 +27,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {denied === "1" && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          You don&rsquo;t have permission to do that. Ask an Admin or Manager if you think you should.
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-semibold text-ink-900">Welcome back, {user.name?.split(" ")[0]}</h1>
         <p className="text-sm text-ink-500">Here&rsquo;s what&rsquo;s happening across {user.tenantName} today.</p>

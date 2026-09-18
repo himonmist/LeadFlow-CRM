@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requirePermission } from "@/lib/session";
+import { can } from "@/lib/permissions";
 import { getService } from "@/lib/queries/services";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   if (!service) notFound();
 
   const total = service.value - service.discount + service.tax;
+  const canEdit = can(user.permissions, "service", "edit");
 
   return (
     <div className="grid gap-5 lg:grid-cols-3">
@@ -45,8 +47,14 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
         <Card>
           <p className="mb-3 text-sm font-semibold text-ink-900">Delivery Details</p>
+          {!canEdit && (
+            <p className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-ink-500">
+              You have view-only access to service delivery. Ask an Admin or Manager to make changes.
+            </p>
+          )}
           <form action={updateService} key={service.updatedAt.getTime()} className="grid gap-4">
             <input type="hidden" name="serviceId" value={service.id} />
+            <fieldset disabled={!canEdit} className="contents">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Status">
                 <Select name="status" defaultValue={service.status}>
@@ -89,9 +97,12 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             <Field label="Description">
               <Textarea name="description" defaultValue={service.description ?? ""} />
             </Field>
-            <SubmitButton size="sm" className="w-fit" pendingLabel="Saving...">
-              Save Changes
-            </SubmitButton>
+            {canEdit && (
+              <SubmitButton size="sm" className="w-fit" pendingLabel="Saving...">
+                Save Changes
+              </SubmitButton>
+            )}
+            </fieldset>
           </form>
         </Card>
       </div>

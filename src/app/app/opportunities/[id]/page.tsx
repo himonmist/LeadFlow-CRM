@@ -94,6 +94,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           {opportunity.notes && <p className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-ink-600">{opportunity.notes}</p>}
         </Card>
 
+        {canEdit && (
         <Card>
           <p className="mb-3 text-sm font-semibold text-ink-900">Update Next Action</p>
           <form action={updateOpportunityNextAction} className="grid gap-3 sm:grid-cols-3">
@@ -112,6 +113,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             </Button>
           </form>
         </Card>
+        )}
 
         <Card>
           <div className="mb-3 flex items-center justify-between">

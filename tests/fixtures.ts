@@ -39,6 +39,32 @@ export async function createTenantWithAdmin(label: string): Promise<{ tenantId: 
   };
 }
 
+/** Creates a User with an arbitrary role (e.g. "MARKETING") under an
+ * existing tenant, for tests that need to exercise the real permission
+ * matrix rather than always acting as an ADMIN. */
+export async function createUserWithRole(tenantId: string, roleName: keyof typeof ROLE_PERMISSIONS): Promise<MockSessionUser> {
+  const unique = randomUUID();
+  const role = await prisma.role.upsert({
+    where: { tenantId_name: { tenantId, name: roleName } },
+    update: {},
+    create: { tenantId, name: roleName, label: roleName, permissions: ROLE_PERMISSIONS[roleName] as object },
+  });
+  const user = await prisma.user.create({
+    data: { tenantId, roleId: role.id, name: `Test ${roleName}`, email: `${unique}@test.local`, passwordHash: "not-used-in-tests" },
+  });
+  const tenant = await prisma.tenant.findUniqueOrThrow({ where: { id: tenantId } });
+
+  return {
+    id: user.id,
+    tenantId,
+    tenantName: tenant.name,
+    name: user.name,
+    email: user.email,
+    roleName,
+    permissions: ROLE_PERMISSIONS[roleName],
+  };
+}
+
 export async function createCustomer(tenantId: string, name = "Test Customer") {
   return prisma.customer.create({ data: { tenantId, name } });
 }

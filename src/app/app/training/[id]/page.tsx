@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requirePermission } from "@/lib/session";
+import { can } from "@/lib/permissions";
 import { getTrainingProgram, listTrainers } from "@/lib/queries/training";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
   if (!training) notFound();
 
   const total = training.fee - training.discount + training.tax;
+  const canEdit = can(user.permissions, "training", "edit");
 
   return (
     <div className="grid gap-5 lg:grid-cols-3">
@@ -39,8 +41,14 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
 
         <Card>
           <p className="mb-3 text-sm font-semibold text-ink-900">Schedule &amp; Delivery</p>
+          {!canEdit && (
+            <p className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-ink-500">
+              You have view-only access to training schedules. Ask an Admin, Manager, or Trainer to make changes.
+            </p>
+          )}
           <form action={updateTrainingProgram} key={training.updatedAt.getTime()} className="grid gap-4">
             <input type="hidden" name="trainingId" value={training.id} />
+            <fieldset disabled={!canEdit} className="contents">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Status">
                 <Select name="status" defaultValue={training.status}>
@@ -107,9 +115,12 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
                 <Input type="number" name="tax" defaultValue={training.tax} />
               </Field>
             </div>
-            <SubmitButton size="sm" className="w-fit" pendingLabel="Saving...">
-              Save Changes
-            </SubmitButton>
+            {canEdit && (
+              <SubmitButton size="sm" className="w-fit" pendingLabel="Saving...">
+                Save Changes
+              </SubmitButton>
+            )}
+            </fieldset>
           </form>
         </Card>
       </div>
