@@ -7,6 +7,7 @@ import { Card, EmptyState } from "@/components/ui/card";
 import { StatusBadge, Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { LogActivityForm } from "@/components/app/log-activity-form";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { convertLeadToOpportunity } from "../actions";
@@ -125,7 +126,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <Field label="Estimated Value (BDT)" required>
                   <Input type="number" name="estimatedValue" required min={0} step={1000} defaultValue={lead.estimatedValue ?? 0} />
                 </Field>
-                <Button type="submit">Create Opportunity</Button>
+                <SubmitButton pendingLabel="Creating...">Create Opportunity</SubmitButton>
               </form>
             </Card>
           )

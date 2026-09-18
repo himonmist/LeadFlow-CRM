@@ -9,6 +9,7 @@ import { StatusBadge, Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { LogActivityForm } from "@/components/app/log-activity-form";
+import { EditOpportunityForm } from "@/components/app/edit-opportunity-form";
 import { StageControls } from "@/components/app/stage-controls";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { updateOpportunityNextAction } from "../actions";
@@ -26,6 +27,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   const pendingApproval = opportunity.approvals.find((a) => a.status === "PENDING");
   const canApprove = can(user.permissions, "approval", "approve");
+  const canEdit = can(user.permissions, "opportunity", "edit");
 
   return (
     <div className="grid gap-5 lg:grid-cols-3">
@@ -66,7 +68,18 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         )}
 
         <Card>
-          <p className="mb-3 text-sm font-semibold text-ink-900">Opportunity Details</p>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold text-ink-900">Opportunity Details</p>
+            {canEdit && (
+              <EditOpportunityForm
+                opportunityId={opportunity.id}
+                programName={opportunity.programName}
+                requirement={opportunity.requirement}
+                estimatedValue={opportunity.estimatedValue}
+                priority={opportunity.priority}
+              />
+            )}
+          </div>
           <dl className="grid grid-cols-2 gap-y-3 text-sm sm:grid-cols-3">
             <Info label="Customer" value={opportunity.customer.name} />
             <Info label="Program / Service" value={opportunity.programName ?? "—"} />

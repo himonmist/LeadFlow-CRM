@@ -4,6 +4,7 @@ import { useState } from "react";
 import { logActivity } from "@/app/app/activities/actions";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 const ACTIVITY_TYPES = [
   "PHONE_CALL",
@@ -116,9 +117,9 @@ export function LogActivityForm({
       </Field>
 
       <div className="flex gap-2">
-        <Button type="submit" size="sm">
+        <SubmitButton size="sm" pendingLabel="Saving...">
           Save Activity
-        </Button>
+        </SubmitButton>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
           Cancel
         </Button>

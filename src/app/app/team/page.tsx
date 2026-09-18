@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { inviteTeamMember, toggleUserActive } from "./actions";
 
@@ -84,9 +85,9 @@ export default async function TeamPage() {
                   ))}
               </Select>
             </Field>
-            <Button type="submit" size="sm">
+            <SubmitButton size="sm" pendingLabel="Sending...">
               Send Invite
-            </Button>
+            </SubmitButton>
             <p className="text-xs text-ink-400">Temporary password: Welcome123! (they should change it after first login)</p>
           </form>
         </Card>

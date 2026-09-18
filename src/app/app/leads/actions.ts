@@ -59,8 +59,20 @@ export async function convertLeadToOpportunity(formData: FormData) {
   const user = await requirePermission("opportunity", "create");
   const leadId = String(formData.get("leadId"));
 
-  const lead = await prisma.lead.findFirst({ where: { id: leadId, tenantId: user.tenantId } });
+  const lead = await prisma.lead.findFirst({
+    where: { id: leadId, tenantId: user.tenantId },
+    include: { opportunities: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
   if (!lead) return;
+
+  // Idempotency guard: a slow network or a double-click can resubmit this
+  // same form before the page has re-rendered past the "Convert to
+  // Opportunity" card, which would otherwise create a duplicate
+  // Opportunity. If this lead was already converted, just go to the
+  // opportunity that conversion produced instead of creating another one.
+  if (lead.status === "CONVERTED" && lead.opportunities[0]) {
+    redirect(`/app/opportunities/${lead.opportunities[0].id}`);
+  }
 
   let customerId = lead.customerId;
   if (!customerId) {

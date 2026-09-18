@@ -100,6 +100,37 @@ export async function updateOpportunityNextAction(formData: FormData) {
   revalidatePath(`/app/opportunities/${opportunityId}`);
 }
 
+export async function updateOpportunityDetails(formData: FormData) {
+  const user = await requirePermission("opportunity", "edit");
+  const opportunityId = String(formData.get("opportunityId"));
+
+  const opportunity = await prisma.opportunity.findFirst({ where: { id: opportunityId, tenantId: user.tenantId } });
+  if (!opportunity) return;
+
+  const programName = String(formData.get("programName") || "") || null;
+  const requirement = String(formData.get("requirement") || "");
+  const estimatedValue = Number(formData.get("estimatedValue") || 0);
+  const priority = String(formData.get("priority") || opportunity.priority) as "LOW" | "MEDIUM" | "HIGH";
+
+  await prisma.opportunity.update({
+    where: { id: opportunityId },
+    data: { programName, requirement, estimatedValue, priority },
+  });
+
+  await logAudit({
+    tenantId: user.tenantId,
+    userId: user.id,
+    action: "UPDATE",
+    entityType: "Opportunity",
+    entityId: opportunityId,
+    before: { programName: opportunity.programName, requirement: opportunity.requirement, estimatedValue: opportunity.estimatedValue, priority: opportunity.priority },
+    after: { programName, requirement, estimatedValue, priority },
+  });
+
+  revalidatePath(`/app/opportunities/${opportunityId}`);
+  revalidatePath("/app/opportunities");
+}
+
 export async function markLostOrPostponed(opportunityId: string, key: "LOST" | "POSTPONED" | "CANCELLED", reason?: string) {
   const user = await requirePermission("opportunity", "cancel");
   const stage = await prisma.pipelineStage.findFirst({ where: { tenantId: user.tenantId, key } });

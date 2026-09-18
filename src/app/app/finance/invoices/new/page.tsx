@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Field, Input, Select } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { LineItemsEditor } from "@/components/app/line-items-editor";
 import { createInvoice } from "../../actions";
 
@@ -49,9 +49,9 @@ export default async function NewInvoicePage({ searchParams }: { searchParams: P
           </Field>
         </div>
 
-        <Button type="submit" size="lg" className="w-fit">
+        <SubmitButton size="lg" className="w-fit" pendingLabel="Creating...">
           Create Invoice
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

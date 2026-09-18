@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { LineItemsEditor } from "@/components/app/line-items-editor";
 import { createQuotation } from "../actions";
 
@@ -52,9 +52,9 @@ export default async function NewQuotationPage({ searchParams }: { searchParams:
           <Textarea name="notes" />
         </Field>
 
-        <Button type="submit" size="lg" className="w-fit">
+        <SubmitButton size="lg" className="w-fit" pendingLabel="Creating...">
           Create Quotation
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

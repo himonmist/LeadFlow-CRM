@@ -74,8 +74,18 @@ export async function generateInvoiceFromQuotation(quotationId: string) {
   const user = await requirePermission("invoice", "create");
   const { generateInvoiceNumber } = await import("@/lib/numbering");
 
-  const quotation = await prisma.quotation.findFirst({ where: { id: quotationId, tenantId: user.tenantId }, include: { items: true } });
+  const quotation = await prisma.quotation.findFirst({
+    where: { id: quotationId, tenantId: user.tenantId },
+    include: { items: true, invoices: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
   if (!quotation) return;
+
+  // Idempotency guard: a double-click or slow network can resubmit this form
+  // before the UI re-renders past the "Generate Invoice" button, which would
+  // otherwise create a duplicate Invoice. If one already exists, go there instead.
+  if (quotation.invoices[0]) {
+    redirect(`/app/finance/invoices/${quotation.invoices[0].id}`);
+  }
 
   const invoiceNo = await generateInvoiceNumber(user.tenantId);
   const invoice = await prisma.invoice.create({

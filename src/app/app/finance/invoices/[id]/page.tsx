@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { PrintButton } from "@/components/app/print-button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { issueInvoice, recordPayment, cancelInvoice } from "../../actions";
@@ -180,9 +181,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <Input name="reference" placeholder="TXN-..." />
             </Field>
             <div className="flex items-end">
-              <Button type="submit" size="sm" className="w-full">
+              <SubmitButton size="sm" className="w-full" pendingLabel="Recording...">
                 Record Payment
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         )}

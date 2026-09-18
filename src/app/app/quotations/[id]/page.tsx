@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { PrintButton } from "@/components/app/print-button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { sendQuotation, generateInvoiceFromQuotation } from "../actions";
@@ -58,9 +59,9 @@ export default async function QuotationDetailPage({ params }: { params: Promise<
         )}
         {(quotation.status === "SENT" || quotation.status === "APPROVED") && quotation.invoices.length === 0 && (
           <form action={async () => { "use server"; await generateInvoiceFromQuotation(quotation.id); }}>
-            <Button type="submit" size="sm">
+            <SubmitButton size="sm" pendingLabel="Generating...">
               Generate Invoice
-            </Button>
+            </SubmitButton>
           </form>
         )}
         {quotation.invoices.map((inv) => (

@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/session";
 import { listOwners } from "@/lib/queries/leads";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { createLead } from "../actions";
 
 const SOURCES = ["WEBSITE", "FACEBOOK", "LINKEDIN", "EMAIL", "PHONE", "REFERRAL", "EVENT", "CAMPAIGN", "EXISTING_CUSTOMER", "PARTNER", "MANUAL"];
@@ -106,9 +106,9 @@ export default async function NewLeadPage() {
           <Textarea name="notes" placeholder="What does the customer need?" />
         </Field>
 
-        <Button type="submit" size="lg" className="w-fit">
+        <SubmitButton size="lg" className="w-fit" pendingLabel="Creating...">
           Create Lead
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );
