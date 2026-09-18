@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Bell, ChevronDown, LogOut } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu } from "lucide-react";
 import { signOutAction } from "@/app/app/actions";
 import { GlobalSearch } from "./global-search";
 
@@ -10,15 +10,25 @@ export function Topbar({
   userName,
   roleLabel,
   unreadCount,
+  onMenuClick,
 }: {
   userName: string;
   roleLabel: string;
   unreadCount: number;
+  onMenuClick: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="flex h-16 items-center gap-4 border-b border-gray-100 bg-white px-6">
+    <header className="flex h-16 items-center gap-4 border-b border-gray-100 bg-white px-4 sm:px-6">
+      <button
+        type="button"
+        onClick={onMenuClick}
+        aria-label="Open menu"
+        className="-ml-1 rounded-lg p-2 text-ink-500 hover:bg-gray-50 lg:hidden"
+      >
+        <Menu size={20} />
+      </button>
       <GlobalSearch />
       <div className="ml-auto flex items-center gap-4">
         <Link href="/app/notifications" className="relative text-ink-500 hover:text-ink-900">
